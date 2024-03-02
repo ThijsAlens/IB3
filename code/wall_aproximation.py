@@ -3,17 +3,36 @@ import time
 from Actuator_Interpolation import actuator_interpolation
 
 input_data_path = "snapshot_data"
-
-
-n_rows_used = 10                        # ex. 10: read row 0, read row 9, read row 19, read row 29
-n_columns_used = 20                     # ex. 20: read columns 0-19, read columns 1-20, read columns 2-21
-threshold = 1                           # ex. 5: if the average difference differs more then threshold, it is considered a sharp edge 
-
 input_data = np.loadtxt(input_data_path)
-sample = np.zeros(n_columns_used)
-old_slope= 0
-new_slope= 0
 
+
+
+def detect_surrounding(data, inside_outside_threshold, n_rows=10):
+    """
+    detect_surrounding aproximates the surrounding where the image is taken.
+
+    Args:
+        data : The frame that needs to be processed.
+        n_rows | default=10 : How many rows need to be taken into account when processing. n_rows at the top of the frame are used.
+        inside_outside_threshold : when is it seen as outside/inside, the higher the value the more likely it is to return outside.
+
+    Returns:
+        String : "inside" / "outside".
+    """
+
+    inside = 0
+    outside = 0
+    # open_space = 0    extra parameter to identify?
+    for row in range(0, n_rows):
+        if (np.mean(data[row]) >= inside_outside_threshold):    # >= threshold == inside
+            inside += 1
+        elif (np.mean(data[row]) < inside_outside_threshold):
+            outside += 1
+    if (inside > outside):
+        return "inside"
+    elif (inside < outside):
+        return "outside"
+    
 def detect_walls():
     for row in range(0, len(input_data), n_rows_used):
         for column in range(len(input_data[row])):
@@ -25,7 +44,19 @@ def detect_walls():
                 print(f"wall found at {column-(n_columns_used/2)}, new_slope = {new_slope}, old_slope = {old_slope}")
             old_slope = new_slope
 
-def depth_estimation(data, size):
+def quantize_frame(data, size):
+    """
+    quantize_frame quantizes the frame into chunks of size x size.
+    ex : data is 400x200, size is 10, result is 40x20 where every original 10x10 now is a 1x1 (mean of 10x10).
+
+    Args:
+        data : The frame that needs to be processed.
+        size : How big are the squares that need to be processed as 1.
+        
+    Returns:
+        npArray : original frame quantized according to the parameter size.
+    """
+
     result = []
     for row in range(0, len(data), size):
         row_result = []
@@ -43,10 +74,9 @@ def main():
     min_voltage = 0
     max_voltage = 5
 
-    mean_estimation = depth_estimation(input_data, size)
+    mean_estimation = quantize_frame(input_data, size)
     print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
     actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
-
 
 
 # time calculation

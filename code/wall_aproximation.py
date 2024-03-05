@@ -5,7 +5,32 @@ from Actuator_Interpolation import actuator_interpolation
 input_data_path = "snapshot_data"
 input_data = np.loadtxt(input_data_path)
 
+def detect_movement(data, differencial, n_rows=10):
+    """
+    detect_movement aproximates if something is moving in front of the data.
 
+    Args:
+        data : The frame that needs to be processed.
+        n_rows | default=10 : How many rows need to be taken into account when processing. n_rows at the bottom of the frame are used.
+        differencial : How much difference must there be between the mean value of the bottom and the motion detected
+    
+    Returns:
+        npArray : with 0 and 1 where a 1 is movement detected and 0, no movement
+    """
+
+    starting_index = len(data)-n_rows
+    mean_sum = 0
+    for row in range(starting_index, len(data), 1):
+        mean_sum += np.mean(data[row])
+    mean = mean_sum/n_rows 
+    t_data = np.transpose(data)
+    r_data = np.empty(len(data))
+    for column in range(len(t_data)):
+        if (np.mean(t_data[column]) > (mean + differencial)):
+            r_data[column] = 1
+        else:
+            r_data[column] = 0
+    return r_data
 
 def detect_surrounding(data, inside_outside_threshold, n_rows=10):
     """

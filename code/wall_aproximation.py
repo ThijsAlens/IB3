@@ -100,7 +100,7 @@ def main():
     max_voltage = 5
 
     mean_estimation = quantize_frame(input_data, size)
-    print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
+    #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
     actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
 
 
@@ -109,4 +109,4 @@ start_time = time.time()
 main()
 end_time = time.time()
 elapsed_time = end_time - start_time
-print(f"Elapsed time: {elapsed_time:.4f} seconds")
+#print(f"Elapsed time: {elapsed_time:.4f} seconds")

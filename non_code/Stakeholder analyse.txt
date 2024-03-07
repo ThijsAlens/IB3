@@ -1,0 +1,17 @@
+Stakeholder analyse
+-------------------
+
+Stap 1:
+We willen slechtziende mensen helpen door een AI-model te gebruiken die diepte kan herkennen en hierdoor feedback geeft aan de gebruiker. We doen dit in de context van IB3, het doel is dus dat het werkt, de code leesbaar is en er documentatie is. 
+
+Stap 2:
+De verschillende stakeholders zijn: Mhr. D. Pauwels (de begeleidende prof), de groep voor de slechtzienden (het Vlaamse Oogfonds), revalidatie experts (experts die slechtzienden begeleiden), familie en vrienden van slechtzienden, de Vlaamse overheid.
+
+Stap 3:
+Belangrijke stakeholders: de groep voor de slechtzienden (het Vlaamse Oogfonds)
+Tevreden houden: Mhr. D. Pauwels (de begeleidende prof)
+Informeren: revalidatie experts (experts die slechtzienden begeleiden), familie en vrienden van slechtzienden
+Minst belangrijk: de Vlaamse overheid
+
+Stap 4:
+???

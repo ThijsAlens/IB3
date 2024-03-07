@@ -44,16 +44,16 @@ def translate_data_to_volatages(data, threshold, max_value, min_voltage, max_vol
     v_data = np.empty(len(t_data))
     for actuator in range(len(t_data)):
         c_data[actuator] = np.mean(t_data[actuator])
-        print(f"max = {np.max(c_data[actuator])}")
+        #print(f"max = {np.max(c_data[actuator])}")
         if c_data[actuator] < threshold:
             v_data[actuator] = 0
         else:
-            print((c_data[actuator] - threshold) / (max_value - threshold))
+            #print((c_data[actuator] - threshold) / (max_value - threshold))
             v_data[actuator] = ((c_data[actuator] - threshold) / (max_value - threshold)) * (max_voltage - min_voltage) + min_voltage
     return np.transpose(v_data)
 
 def actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage):
-    print("Actuator_Interpolation")
+    #print("Actuator_Interpolation")
     croped_data = crop_data_for_actuators(mean_estimation, n_actuators)
     actuator_data = translate_data_to_volatages(croped_data, threshold, max_value, min_voltage, max_voltage)
     print(f"Actuator voltages: {actuator_data}")

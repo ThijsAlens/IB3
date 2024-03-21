@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torchvision.transforms import Compose
 import time
 import multiprocessing as mp
-from wall_aproximation import mainfunc
+#from wall_aproximation import mainfunc
 import multiprocessing as mp
 import os
 import sys

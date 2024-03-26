@@ -1,3 +1,4 @@
+import serial
 import numpy as np
 import time
 from Actuator_Interpolation import actuator_interpolation
@@ -90,31 +91,46 @@ def quantize_frame(data, size):
         result.append(row_result)
     return np.array(result)
 
-def main():
+def write_serial(input_data):
+    print("start write\n")
+    ser = serial.Serial('/dev/ttyACM0', 9600)
+    res = "/MEEL/"
+    for i in range(len(input_data)-1):
+        res += f"{input_data[i]},"
+    res += f"{input_data[len(input_data)-1]}"
+    res += "\n"
+    ser.write(res.encode())
+    #time.sleep(0.1)
+    ser.close()
+    print("end write\n")
 
-    input_data_path = "data.txt"
-    input_data = np.loadtxt(input_data_path)
+def data_processing(input_data):
+
+    #input_data_path = "data.txt"
+    #input_data = np.loadtxt(input_data_path)
 
     size = 10           # blocks of size x size are seen as 1
     threshold = 150     # min value of data where it is seen as "close"
     passage_threshold = 20  # max value of data where it is seen as an opening
     min_size_passage = 100   # min area size of a passage (100 = 10x10)
     max_value = 255     # max possible value in array
-    n_actuators = 6     # number of actuators
+    n_actuators = 4     # number of actuators
     min_voltage = 0
     max_voltage = 5
 
     mean_estimation = quantize_frame(input_data, size)
-    print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
+    #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
     actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
+    write_serial(actuator_data)
     print(f"Actuator voltages: {actuator_data}")
     main_passage = Find_Passage(mean_estimation, 1, passage_threshold, min_size_passage)
-    print(f"Main passage: {main_passage}")
+    #print(f"Main passage: {main_passage}")
 
-
+'''
 # time calculation
 start_time = time.time()
-main()
+data_processing()
 end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"Elapsed time: {elapsed_time:.4f} seconds")
+'''

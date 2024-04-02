@@ -4,6 +4,8 @@ import time
 from Actuator_Interpolation import actuator_interpolation
 from Find_Passage import Find_Passage
 
+ser = serial.Serial('/dev/ttyACM0', 9600)
+
 def detect_movement(data, differencial, n_rows=10):
     """
     detect_movement aproximates if something is moving in front of the data.
@@ -93,13 +95,16 @@ def quantize_frame(data, size):
 
 def write_serial(input_data):
     print("start write\n")
-    ser = serial.Serial('/dev/ttyACM0', 9600)
-    res = "/MEEL/"
+    if (ser.isOpen() == False):
+        ser.open()
+    
+    res = ""
     for i in range(len(input_data)-1):
         res += f"{input_data[i]},"
     res += f"{input_data[len(input_data)-1]}"
     res += "\n"
     ser.write(res.encode())
+    print(res)
     #time.sleep(0.1)
     ser.close()
     print("end write\n")
@@ -123,7 +128,7 @@ def data_processing(input_data):
     actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
     write_serial(actuator_data)
     print(f"Actuator voltages: {actuator_data}")
-    main_passage = Find_Passage(mean_estimation, 1, passage_threshold, min_size_passage)
+    #main_passage = Find_Passage(mean_estimation, 1, passage_threshold, min_size_passage)
     #print(f"Main passage: {main_passage}")
 
 '''

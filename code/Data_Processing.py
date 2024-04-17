@@ -109,27 +109,77 @@ def write_serial(input_data):
     ser.close()
     print("end write\n")
 
-def data_processing(input_data):
+def data_processing(info_for_current_frame):
 
-    #input_data_path = "data.txt"
-    #input_data = np.loadtxt(input_data_path)
+    input_data_path = "data.txt"
+    input_data = np.loadtxt(input_data_path)
+
+    info_for_next_frame = np.empty(7)
+    """
+        array consists of info gathered in this frame, it has the following data:
+        [0] = threshold
+        [1] = #frames where the surrounding (inside/outside) is consistent
+        [2] = inside/outside
+        [3] = #frames a passage has been found
+        [4] = passage, if found else []
+        [5] = data for actuators, if processing is not active []
+        [6] = active (1), not active (0)
+    """
 
     size = 10           # blocks of size x size are seen as 1
     threshold = 150     # min value of data where it is seen as "close"
     passage_threshold = 20  # max value of data where it is seen as an opening
     min_size_passage = 100   # min area size of a passage (100 = 10x10)
+    inside_outside_threshold = 100  #when is it considered inside (inside is overall higher => threshold needs to be higher)
     max_value = 255     # max possible value in array
-    n_actuators = 4     # number of actuators
+    n_actuators = 6     # number of actuators
     min_voltage = 0
     max_voltage = 5
 
+    #modifiers for the threshold
+    inside_outside_modifier = 50    # when triggered, the threshold is inceased by the modifier
+
+
+    # preprocessing
     mean_estimation = quantize_frame(input_data, size)
+
+    # processing
+
+    surrounding = detect_surrounding(mean_estimation, inside_outside_threshold)
+    info_for_next_frame[2] = surrounding
+    if (info_for_current_frame[2] == surrounding):
+        info_for_next_frame[1] += info_for_current_frame[1] + 1
+    else:
+        info_for_next_frame[1] = 0
+    if (info_for_current_frame[1] >= 2):
+        if (surrounding == "inside"):
+            threshold += inside_outside_modifier
+        else:
+            threshold -= inside_outside_modifier
+    
+    passage = Find_Passage(mean_estimation, size, passage_threshold, min_size_passage)
+    if (passage != []):
+        # possibly a function that checks if it is the same passage as the previous, but more sensors needed
+        info_for_next_frame[3] = info_for_current_frame[3] + 1
+        info_for_next_frame[4] = passage
+        if (info_for_current_frame[3] >= 2):
+            # a passage must be found twice before it is confirmed as a passage
+            info_for_next_frame[5] = passage
+            print(f"Passage found -> call some animation function\n{passage}")
+    else:
+        info_for_next_frame[3] = 0
+        if (info_for_current_frame[6] == 1):
+            actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
+            info_for_next_frame[5] = actuator_data
+            print(f"Actuator voltages: {actuator_data}")
+        else:
+            info_for_next_frame[5] = []
+            print(f"Processing not active")
+
     #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
-    actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
-    write_serial(actuator_data)
-    print(f"Actuator voltages: {actuator_data}")
-    #main_passage = Find_Passage(mean_estimation, 1, passage_threshold, min_size_passage)
-    #print(f"Main passage: {main_passage}")
+
+
+    return info_for_next_frame
 
 '''
 # time calculation

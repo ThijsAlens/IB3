@@ -1,3 +1,5 @@
+import numpy as np
+
 def Find_Passage(data, size, threshold, min_area_size):
     """
     Find_Passage searches for any possible opening in the data (like an open door).
@@ -32,16 +34,19 @@ def Find_Passage(data, size, threshold, min_area_size):
                 significant_areas[-1][1].append(column)
         if (curr_length != len(significant_areas)):
             significant_areas[-1][1] = [min(significant_areas[-1][1]), max(significant_areas[-1][1])]
-    print(significant_areas)
+    #print(significant_areas)
 
     mean_minimum = 0
     mean_maximum = 0
     for i in range(len(significant_areas)):
         mean_minimum += significant_areas[i][1][0]
         mean_maximum += significant_areas[i][1][1]
-    mean_maximum /= len(significant_areas)
-    mean_minimum /= len(significant_areas)
-    if (mean_maximum-mean_minimum > min_area_size**0.5 and significant_areas[-1][0]-significant_areas[0][0] > min_area_size**0.5):
-        return [[significant_areas[0][0], mean_minimum], [significant_areas[-1][0], mean_maximum]]
+    if (len(significant_areas) != 0):
+        mean_maximum /= len(significant_areas)
+        mean_minimum /= len(significant_areas)
+        if (mean_maximum-mean_minimum > min_area_size**0.5 and significant_areas[-1][0]-significant_areas[0][0] > min_area_size**0.5):
+            return [[significant_areas[0][0], mean_minimum], [significant_areas[-1][0], mean_maximum]]
+        else:
+            return []
     else:
         return []

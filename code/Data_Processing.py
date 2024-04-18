@@ -109,12 +109,13 @@ def write_serial(input_data):
     ser.close()
     print("end write\n")
 
-def data_processing(info_for_current_frame):
+def data_processing(input_data, info_for_current_frame):
 
     input_data_path = "data.txt"
-    input_data = np.loadtxt(input_data_path)
+    # input_data = np.loadtxt(input_data_path)
 
-    info_for_next_frame = np.empty(7)
+    info_for_next_frame = list(range(7))
+    info_for_next_frame[2] = ""
     """
         array consists of info gathered in this frame, it has the following data:
         [0] = threshold
@@ -145,6 +146,9 @@ def data_processing(info_for_current_frame):
 
     # processing
 
+    if (info_for_current_frame[6] == 1):
+        info_for_next_frame[6] = 1
+
     surrounding = detect_surrounding(mean_estimation, inside_outside_threshold)
     info_for_next_frame[2] = surrounding
     if (info_for_current_frame[2] == surrounding):
@@ -172,12 +176,14 @@ def data_processing(info_for_current_frame):
             actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
             info_for_next_frame[5] = actuator_data
             print(f"Actuator voltages: {actuator_data}")
+            write_serial(actuator_data)
         else:
             info_for_next_frame[5] = []
             print(f"Processing not active")
 
     #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
 
+    
 
     return info_for_next_frame
 

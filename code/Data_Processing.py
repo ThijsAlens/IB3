@@ -6,18 +6,21 @@ from Find_Passage import Find_Passage
 
 ser = serial.Serial('/dev/ttyACM0', 9600)
 
-def detect_movement(data, differencial, n_rows=10):
+def detect_movement(data, differencial, n_rows=-1):
     """
     detect_movement aproximates if something is moving in front of the data.
 
     Args:
         data : The frame that needs to be processed.
-        n_rows | default=10 : How many rows need to be taken into account when processing. n_rows at the bottom of the frame are used.
+        n_rows | default=-1 : How many rows need to be taken into account when processing. n_rows at the bottom of the frame are used. -1 stands for all the rows
         differencial : How much difference must there be between the mean value of the bottom and the motion detected
     
     Returns:
         npArray : with 0 and 1 where a 1 is movement detected and 0, no movement
     """
+
+    if (n_rows == -1):
+        n_rows = len(data)
 
     starting_index = len(data)-n_rows
     mean_sum = 0

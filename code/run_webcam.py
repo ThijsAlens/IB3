@@ -33,6 +33,11 @@ cap = cv2.VideoCapture(0)
 print(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 print(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+info_for_current_frame = list(range(7))
+for i in info_for_current_frame:
+    i = 0
+info_for_current_frame[2] = ""
+info_for_current_frame[6] = 1
 while True:
     curr_time = time.time()
     
@@ -60,7 +65,7 @@ while True:
     depth_color = cv2.applyColorMap(depth, cv2.COLORMAP_INFERNO)
         
     cv2.imshow('Depth Map', depth_color)
-    data_processing(depth)
+    info_for_current_frame = data_processing(depth, info_for_current_frame)
 
     print('FPS:', 1 / (time.time() - curr_time))
 

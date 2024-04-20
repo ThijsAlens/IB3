@@ -4,23 +4,20 @@ import time
 from Actuator_Interpolation import actuator_interpolation
 from Find_Passage import Find_Passage
 
-ser = serial.Serial('/dev/ttyACM0', 9600)
+#ser = serial.Serial('/dev/ttyACM0', 9600)
 
-def detect_movement(data, differencial, n_rows=-1):
+def detect_movement(data, differencial, n_rows=10):
     """
     detect_movement aproximates if something is moving in front of the data.
 
     Args:
         data : The frame that needs to be processed.
-        n_rows | default=-1 : How many rows need to be taken into account when processing. n_rows at the bottom of the frame are used. -1 stands for all the rows
+        n_rows | default=10 : How many rows need to be taken into account when processing. n_rows at the bottom of the frame are used.
         differencial : How much difference must there be between the mean value of the bottom and the motion detected
     
     Returns:
         npArray : with 0 and 1 where a 1 is movement detected and 0, no movement
     """
-
-    if (n_rows == -1):
-        n_rows = len(data)
 
     starting_index = len(data)-n_rows
     mean_sum = 0
@@ -36,7 +33,7 @@ def detect_movement(data, differencial, n_rows=-1):
             r_data[column] = 0
     return r_data
 
-def detect_surrounding(data, inside_outside_threshold, n_rows=10):
+def detect_surrounding(data, inside_outside_threshold, n_rows=4):
     """
     detect_surrounding aproximates the surrounding where the image is taken.
 
@@ -117,6 +114,9 @@ def data_processing(input_data, info_for_current_frame):
     input_data_path = "data.txt"
     # input_data = np.loadtxt(input_data_path)
 
+    input_data_above = input_data[0:(len(input_data)-30)]
+    input_data_below = input_data[(len(input_data)-30):len(input_data)]
+
     info_for_next_frame = list(range(7))
     info_for_next_frame[2] = ""
     """
@@ -131,12 +131,14 @@ def data_processing(input_data, info_for_current_frame):
     """
 
     size = 10           # blocks of size x size are seen as 1
-    threshold = 150     # min value of data where it is seen as "close"
+    threshold = 75     # min value of data where it is seen as "close"
     passage_threshold = 20  # max value of data where it is seen as an opening
-    min_size_passage = 100   # min area size of a passage (100 = 10x10)
-    inside_outside_threshold = 100  #when is it considered inside (inside is overall higher => threshold needs to be higher)
+    min_size_passage = 70   # min area size of a passage (100 = 10x10)
+    inside_outside_threshold = 150  #when is it considered inside (inside is overall higher => threshold needs to be higher)
     max_value = 255     # max possible value in array
-    n_actuators = 6     # number of actuators
+    default_data_multiplier = 2    # default multiplier for the data so it is moreaccurate after data croping
+    data_multiplier_outside = 2    # multiplier for the data when it is outside
+    n_actuators = 4     # number of actuators
     min_voltage = 0
     max_voltage = 5
 
@@ -145,7 +147,9 @@ def data_processing(input_data, info_for_current_frame):
 
 
     # preprocessing
-    mean_estimation = quantize_frame(input_data, size)
+    input_data_above *= default_data_multiplier
+
+    mean_estimation = quantize_frame(input_data_above, size)
 
     # processing
 
@@ -155,7 +159,7 @@ def data_processing(input_data, info_for_current_frame):
     surrounding = detect_surrounding(mean_estimation, inside_outside_threshold)
     info_for_next_frame[2] = surrounding
     if (info_for_current_frame[2] == surrounding):
-        info_for_next_frame[1] += info_for_current_frame[1] + 1
+        info_for_next_frame[1] = info_for_current_frame[1] + 1
     else:
         info_for_next_frame[1] = 0
     if (info_for_current_frame[1] >= 2):
@@ -163,9 +167,10 @@ def data_processing(input_data, info_for_current_frame):
             threshold += inside_outside_modifier
         else:
             threshold -= inside_outside_modifier
+            mean_estimation *= data_multiplier_outside
     
     passage = Find_Passage(mean_estimation, size, passage_threshold, min_size_passage)
-    if (passage != []):
+    if (passage != [] and info_for_current_frame[2] == "inside"):
         # possibly a function that checks if it is the same passage as the previous, but more sensors needed
         info_for_next_frame[3] = info_for_current_frame[3] + 1
         info_for_next_frame[4] = passage
@@ -178,16 +183,16 @@ def data_processing(input_data, info_for_current_frame):
         if (info_for_current_frame[6] == 1):
             actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
             info_for_next_frame[5] = actuator_data
-            print(f"Actuator voltages: {actuator_data}")
-            write_serial(actuator_data)
+            #write_serial(actuator_data)
         else:
             info_for_next_frame[5] = []
             print(f"Processing not active")
-
+    info_for_next_frame[0] = threshold
     #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
 
     
-
+    print(info_for_next_frame)
+    
     return info_for_next_frame
 
 '''

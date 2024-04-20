@@ -67,11 +67,13 @@ while True:
     cv2.imshow('Depth Map', depth_color)
     info_for_current_frame = data_processing(depth, info_for_current_frame)
 
+    time.sleep(0.5)
     print('FPS:', 1 / (time.time() - curr_time))
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        write_serial([0.00, 0.00, 0.00, 0.00])
+        #write_serial([0.00, 0.00, 0.00, 0.00])
         break
+    
 
 cap.release()
 cv2.destroyAllWindows()

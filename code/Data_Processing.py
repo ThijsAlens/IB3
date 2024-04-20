@@ -195,7 +195,8 @@ def data_processing(input_data, info_for_current_frame):
         if (info_for_current_frame[6] == 1):
             actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
             info_for_next_frame[5] = actuator_data
-            #write_serial(actuator_data)
+            if (not writingToActuators):
+                write_serial(actuator_data)
         else:
             info_for_next_frame[5] = []
             print(f"Processing not active")

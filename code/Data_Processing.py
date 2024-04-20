@@ -6,6 +6,18 @@ from Find_Passage import Find_Passage
 
 #ser = serial.Serial('/dev/ttyACM0', 9600)
 
+def init_data_processing():
+    """
+    initialize the global variables
+
+    writingToActuators : if false, enables functions to write data to the actuators, if true, some function is writing data, so no other function can
+    ser : SSerial object udes to write to arduino-file
+    """
+    global writingToActuators
+    writingToActuators = False
+    global ser
+    #ser = serial.Serial('/dev/ttyACM0', 9600)
+
 def detect_movement(data, differencial, n_rows=10):
     """
     detect_movement aproximates if something is moving in front of the data.

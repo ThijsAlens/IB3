@@ -144,8 +144,8 @@ def data_processing(input_data, info_for_current_frame):
 
     size = 10           # blocks of size x size are seen as 1
     threshold = 75     # min value of data where it is seen as "close"
-    passage_threshold = 20  # max value of data where it is seen as an opening
-    min_size_passage = 70   # min area size of a passage (100 = 10x10)
+    passage_threshold = 50  # max value of data where it is seen as an opening
+    min_size_passage = 50   # min area size of a passage (100 = 10x10)
     inside_outside_threshold = 150  #when is it considered inside (inside is overall higher => threshold needs to be higher)
     max_value = 255     # max possible value in array
     default_data_multiplier = 2    # default multiplier for the data so it is moreaccurate after data croping
@@ -176,9 +176,9 @@ def data_processing(input_data, info_for_current_frame):
         info_for_next_frame[1] = 0
     if (info_for_current_frame[1] >= 2):
         if (surrounding == "inside"):
-            threshold += inside_outside_modifier
-        else:
             threshold -= inside_outside_modifier
+        else:
+            threshold += inside_outside_modifier
             mean_estimation *= data_multiplier_outside
     
     passage = Find_Passage(mean_estimation, size, passage_threshold, min_size_passage)

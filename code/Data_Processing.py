@@ -143,7 +143,7 @@ def data_processing(input_data, info_for_current_frame):
     """
 
     size = 10           # blocks of size x size are seen as 1
-    threshold = 75     # min value of data where it is seen as "close"
+    threshold = 150     # min value of data where it is seen as "close"
     passage_threshold = 50  # max value of data where it is seen as an opening
     min_size_passage = 50   # min area size of a passage (100 = 10x10)
     inside_outside_threshold = 150  #when is it considered inside (inside is overall higher => threshold needs to be higher)
@@ -155,7 +155,7 @@ def data_processing(input_data, info_for_current_frame):
     max_voltage = 5
 
     #modifiers for the threshold
-    inside_outside_modifier = 50    # when triggered, the threshold is inceased by the modifier
+    inside_outside_modifier = 30    # when triggered, the threshold is inceased by the modifier
 
 
     # preprocessing

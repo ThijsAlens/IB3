@@ -120,24 +120,19 @@ def data_processing(input_data, info_for_current_frame):
     # input_data_path = "data.txt"
     # input_data = np.loadtxt(input_data_path)
 
-    # initialization
+    import numpy as np
 
+def data_processing(input_data, info_for_current_frame):
+
+    # If not active, do no processing
+    if (info_for_current_frame[8] == 0):
+        return info_for_current_frame
+
+    # Seperate data so reference is not considered in processing
     input_data_above = input_data[0:(len(input_data)-30)]
     input_data_below = input_data[(len(input_data)-30):len(input_data)]
 
-    info_for_next_frame = []
-
-    info_for_next_frame.append(0)                            #0
-    info_for_next_frame.append(0)                            #1
-    info_for_next_frame.append("")                           #2
-    info_for_next_frame.append(0)                            #3
-    info_for_next_frame.append([])                           #4
-    info_for_next_frame.append([])                           #5
-    info_for_next_frame.append(5)                            #6
-    info_for_next_frame.append(np.zeros((5, 4)).tolist())    #7
-    info_for_next_frame.append(1)                            #8
-    info_for_next_frame.append(0)                            #9
-
+    # Initializing the info for the next frame to a default
     """
         array consists of info gathered in this frame, it has the following data:
         [0] = threshold
@@ -152,78 +147,96 @@ def data_processing(input_data, info_for_current_frame):
         [9] = #frames where movement is detected
     """
 
-    size = 10           # blocks of size x size are seen as 1
-    threshold = 150     # min value of data where it is seen as "close"
-    passage_threshold = 50  # max value of data where it is seen as an opening
-    min_size_passage = 50   # min area size of a passage (100 = 10x10)
-    inside_outside_threshold = 150  #when is it considered inside (inside is overall higher => threshold needs to be higher)
-    max_value = 255     # max possible value in array
-    default_data_multiplier = 2    # default multiplier for the data so it is more accurate after deleting the bottom (reference distance)
-    data_multiplier_outside = 2    # multiplier for the data when it is outside
-    movement_threshold = 20     # how much difference must there be between the mean value of the bottom and the motion detected
-    min_size_movement = 10      # how big an area needs to be, to be considered as movement
-    n_actuators = 4     # number of actuators
-    min_voltage = 0
-    max_voltage = 5
-    buffer_size = 10     # size of the buffer
-    buffer = info_for_current_frame[7][1:buffer_size]    # init buffer
+    info_for_next_frame = []
 
-    #modifiers for the threshold
-    inside_outside_modifier = 30    # when triggered, the threshold is inceased by the modifier
+    info_for_next_frame.append(0)                            #0
+    info_for_next_frame.append(0)                            #1
+    info_for_next_frame.append("")                           #2
+    info_for_next_frame.append(0)                            #3
+    info_for_next_frame.append([])                           #4
+    info_for_next_frame.append([])                           #5
+    info_for_next_frame.append(5)                            #6
+    info_for_next_frame.append(np.zeros((5, 4)).tolist())    #7
+    info_for_next_frame.append(1)                            #8
+    info_for_next_frame.append(0)                            #9
 
+    # Initializing the variables used to a default value
+    size = 10                                           # blocks of size x size are seen as 1
+    threshold = 150                                     # min value of data where it is seen as "close"
+    passage_threshold = 50                              # max value of data where it is seen as an opening
+    min_size_passage = 50                               # min area size of a passage (100 = 10x10)
+    inside_outside_threshold = 150                      #when is it considered inside (inside is overall higher => threshold needs to be higher)
+    max_value = 255                                     # max possible value in array
+    default_data_multiplier = 2                         # default multiplier for the data so it is more accurate after deleting the bottom (reference distance)
+    data_multiplier_inside = 2                         # multiplier for the data when it is outside
+    movement_threshold = 20                             # how much difference must there be between the mean value of the bottom and the motion detected
+    min_size_movement = 10                              # how big an area needs to be, to be considered as movement
+    n_actuators = 4                                     # number of actuators
+    min_voltage = 0                                     # min voltage of the actuator
+    max_voltage = 5                                     # max voltage of the actuator
+    buffer_size = 10                                    # size of the buffer
+    buffer = info_for_current_frame[7][1:buffer_size]   # init buffer
 
-    # preprocessing
+    inside_outside_modifier = 30                        # when triggered, the threshold is inceased by the modifier
+
+    # Preprocessing: compencate the input data + quantize the frame to be a size x size grid
     input_data_above *= default_data_multiplier
 
     mean_estimation = quantize_frame(input_data_above, size)
     mean_estimation_bottom = quantize_frame(input_data_below, size)
 
-    # processing
-    if (info_for_current_frame[8] == 1):
-        info_for_next_frame[8] = 1
-
+    # Processing of/interpreting the data
+    
+    # Surrounding consistent?
     surrounding = detect_surrounding(mean_estimation, inside_outside_threshold)
     info_for_next_frame[2] = surrounding
+
     if (info_for_current_frame[2] == surrounding):
         info_for_next_frame[1] = info_for_current_frame[1] + 1
     else:
         info_for_next_frame[1] = 0
+
+    # Adjust parameters if consistently inside or outside
     if (info_for_current_frame[1] >= 2):
         if (surrounding == "inside"):
             threshold -= inside_outside_modifier
+            mean_estimation *= data_multiplier_inside
         else:
             threshold += inside_outside_modifier
-            mean_estimation *= data_multiplier_outside
     
+    # Movement detection, animation if detected more then 2 times
+    movement_flag = False
     movement = detect_movement(mean_estimation_bottom, movement_threshold, min_size_movement)
     if (movement == True and info_for_current_frame[9] >= 2):
         print("Movement detected -> call some animation function")
-        info_for_next_frame[6] = buffer_size
-        info_for_next_frame[7] = info_for_current_frame[7]
+        movement_flag = True
         # call some animation function
     else:
         info_for_next_frame[9] = 0
+    
+    # Passage detection (only inside), animation if detected more then 2 times
+    passage_flag = False
+    if (not movement_flag):
         passage = Find_Passage(mean_estimation, size, passage_threshold, min_size_passage)
         if (passage != [] and info_for_current_frame[2] == "inside"):
-            # possibly a function that checks if it is the same passage as the previous, but more sensors needed
             info_for_next_frame[3] = info_for_current_frame[3] + 1
             info_for_next_frame[4] = passage
             if (info_for_current_frame[3] >= 2):
                 # a passage must be found twice before it is confirmed as a passage
-                info_for_next_frame[5] = passage
                 print(f"Passage found -> call some animation function\n{passage}")
+                passage_flag = True
         else:
             info_for_next_frame[3] = 0
-            if (info_for_current_frame[8] == 1):
-                actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
-                buffer.append(actuator_data)
-                info_for_next_frame[5] = np.mean(np.array(buffer), axis=0)
-                info_for_next_frame[6] = buffer_size
-                info_for_next_frame[7] = buffer
-                #write_serial(info_for_next_frame[5])
-            else:
-                info_for_next_frame[5] = []
-                print(f"Processing not active")
+            info_for_next_frame[4] = []
+    
+    # Default interpolation
+    actuator_data = actuator_interpolation(mean_estimation, threshold, max_value, n_actuators, min_voltage, max_voltage)
+    buffer.append(actuator_data)
+    info_for_next_frame[5] = np.mean(np.array(buffer), axis=0)
+    info_for_next_frame[6] = buffer_size
+    info_for_next_frame[7] = buffer
+    if (not (movement_flag or passage_flag)):
+        write_serial(info_for_next_frame[5])
     info_for_next_frame[0] = threshold
     #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
 

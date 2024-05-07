@@ -1,5 +1,12 @@
 #define MAX_PWM 4
 
+/*
+  6 -> rechts
+  5 -> midden-links
+  3 -> midden-rechts
+  2 -> links
+*/
+
 int pwmPins[] = {6, 5, 3, 2};
 int pwmValue[] = {0, 0, 0, 0};
 String resData[MAX_PWM] = {"0.00", "0.00", "0.00", "0.00"};

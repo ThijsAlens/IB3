@@ -114,16 +114,17 @@ def data_processing(input_data, info_for_current_frame):
     # Initializing the info for the next frame to a default
     """
         array consists of info gathered in this frame, it has the following data:
-        [0] = threshold
-        [1] = #frames where the surrounding (inside/outside) is consistent
-        [2] = inside/outside
-        [3] = #frames a passage has been found
-        [4] = passage, if found else []
-        [5] = data for actuators, if processing is not active []
-        [6] = buffer size
-        [7] = buffer for frames
-        [8] = active (1), not active (0)
-        [9] = #frames where movement is detected
+        [0]  = threshold
+        [1]  = #frames where the surrounding (inside/outside) is consistent
+        [2]  = inside/outside
+        [3]  = #frames a passage has been found
+        [4]  = passage, if found else []
+        [5]  = data for actuators, if processing is not active []
+        [6]  = buffer size
+        [7]  = buffer for frames
+        [8]  = active (1), not active (0)
+        [9]  = #frames where movement is detected
+        [10] = buffer where mean of the whole frame is stored
     """
 
     info_for_next_frame = []

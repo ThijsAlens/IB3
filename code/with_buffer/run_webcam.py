@@ -8,6 +8,7 @@ import time
 from depth_anything.dpt import DepthAnything
 from depth_anything.util.transform import Resize, NormalizeImage, PrepareForNet
 from Data_Processing import data_processing, write_serial
+from animations import send_startup_sequence
 
 #x1, y1, x2, y2 = 0, 140, 640, 340 
 
@@ -34,6 +35,8 @@ print(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 print(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
+send_startup_sequence()
+
 info_for_current_frame = []
 info_for_current_frame.append(0)                            #0
 info_for_current_frame.append(0)                            #1
@@ -42,9 +45,10 @@ info_for_current_frame.append(0)                            #3
 info_for_current_frame.append([])                           #4
 info_for_current_frame.append([])                           #5
 info_for_current_frame.append(5)                            #6
-info_for_current_frame.append(np.zeros((10, 4)).tolist())    #7
+info_for_current_frame.append(np.zeros((10, 4)).tolist())   #7
 info_for_current_frame.append(1)                            #8
 info_for_current_frame.append(0)                            #9
+info_for_current_frame.append([])                           #10
 
 while True:
     curr_time = time.time()
@@ -75,11 +79,10 @@ while True:
     cv2.imshow('Depth Map', depth_color)
     info_for_current_frame = data_processing(depth, info_for_current_frame)
 
-    time.sleep(0.05)
     print('FPS:', 1 / (time.time() - curr_time))
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        #write_serial([0.00, 0.00, 0.00, 0.00])
+        write_serial([0.00, 0.00, 0.00, 0.00])
         break
     
 

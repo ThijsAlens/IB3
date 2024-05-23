@@ -66,18 +66,6 @@ def detect_surrounding(data, inside_outside_threshold, n_rows=4):
         return "inside"
     elif (inside < outside):
         return "outside"
-"""    
-def detect_walls():
-    for row in range(0, len(input_data), n_rows_used):
-        for column in range(len(input_data[row])):
-            sample = np.roll(sample, 1)
-            sample[0] = input_data[row][column]
-            new_slope= np.polyfit(np.array(range(0, n_columns_used, 1)), sample, 1)[0]
-            #print(f"new slope= {new_slope}")
-            if (new_slope+threshold <= old_slope <= new_slope-threshold):
-                print(f"wall found at {column-(n_columns_used/2)}, new_slope = {new_slope}, old_slope = {old_slope}")
-            old_slope = new_slope
-"""
 
 def quantize_frame(data, size):
     """
@@ -155,7 +143,7 @@ def data_processing(input_data, info_for_current_frame):
     # Initializing the variables used to a default value
     size = 10                                                       # blocks of size x size are seen as 1
     threshold = 150                                                 # min value of data where it is seen as "close"
-    passage_threshold = 50                                          # max value of data where it is seen as an opening
+    passage_threshold = 70                                          # max value of data where it is seen as an opening
     min_size_passage = 50                                           # min area size of a passage (100 = 10x10)
     inside_outside_threshold = 150                                  # when is it considered inside (inside is overall higher => threshold needs to be higher)
     colision_threshold = 140                                        # when a wall is close, its mean value is greater then this threshold, warn the user fully

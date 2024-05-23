@@ -3,8 +3,10 @@ import numpy as np
 import time
 from Actuator_Interpolation import actuator_interpolation
 from Find_Passage import Find_Passage
+import animations
 
-#ser = serial.Serial('/dev/ttyACM0', 9600)
+ser = serial.Serial('/dev/ttyACM0', 9600)
+writingToActuators = 0
 
 def detect_movement(data, differencial, size, n_rows=-1):
     """
@@ -100,7 +102,6 @@ def quantize_frame(data, size):
     return np.array(result)
 
 def write_serial(input_data):
-    print("start write\n")
     if (ser.isOpen() == False):
         ser.open()
     
@@ -110,17 +111,7 @@ def write_serial(input_data):
     res += f"{input_data[len(input_data)-1]}"
     res += "\n"
     ser.write(res.encode())
-    print(res)
-    #time.sleep(0.1)
     ser.close()
-    print("end write\n")
-
-def data_processing(input_data, info_for_current_frame):
-
-    # input_data_path = "data.txt"
-    # input_data = np.loadtxt(input_data_path)
-
-    import numpy as np
 
 def data_processing(input_data, info_for_current_frame):
 
@@ -159,25 +150,29 @@ def data_processing(input_data, info_for_current_frame):
     info_for_next_frame.append(np.zeros((5, 4)).tolist())    #7
     info_for_next_frame.append(1)                            #8
     info_for_next_frame.append(0)                            #9
+    info_for_next_frame.append([])                           #10
 
     # Initializing the variables used to a default value
-    size = 10                                           # blocks of size x size are seen as 1
-    threshold = 150                                     # min value of data where it is seen as "close"
-    passage_threshold = 50                              # max value of data where it is seen as an opening
-    min_size_passage = 50                               # min area size of a passage (100 = 10x10)
-    inside_outside_threshold = 150                      #when is it considered inside (inside is overall higher => threshold needs to be higher)
-    max_value = 255                                     # max possible value in array
-    default_data_multiplier = 2                         # default multiplier for the data so it is more accurate after deleting the bottom (reference distance)
-    data_multiplier_inside = 2                         # multiplier for the data when it is outside
-    movement_threshold = 20                             # how much difference must there be between the mean value of the bottom and the motion detected
-    min_size_movement = 10                              # how big an area needs to be, to be considered as movement
-    n_actuators = 4                                     # number of actuators
-    min_voltage = 0                                     # min voltage of the actuator
-    max_voltage = 5                                     # max voltage of the actuator
-    buffer_size = 10                                    # size of the buffer
-    buffer = info_for_current_frame[7][1:buffer_size]   # init buffer
+    size = 10                                                       # blocks of size x size are seen as 1
+    threshold = 150                                                 # min value of data where it is seen as "close"
+    passage_threshold = 50                                          # max value of data where it is seen as an opening
+    min_size_passage = 50                                           # min area size of a passage (100 = 10x10)
+    inside_outside_threshold = 150                                  # when is it considered inside (inside is overall higher => threshold needs to be higher)
+    colision_threshold = 140                                        # when a wall is close, its mean value is greater then this threshold, warn the user fully
+    max_value = 255                                                 # max possible value in array
+    default_data_multiplier = 2                                     # default multiplier for the data so it is more accurate after deleting the bottom (reference distance)
+    data_multiplier_inside = 2                                      # multiplier for the data when it is outside
+    movement_threshold = 20                                         # how much difference must there be between the mean value of the bottom and the motion detected
+    min_size_movement = 10                                          # how big an area needs to be, to be considered as movement
+    n_actuators = 4                                                 # number of actuators
+    min_voltage = 2.5                                               # min voltage of the actuator
+    max_voltage = 5                                                 # max voltage of the actuator
+    buffer_size = 5                                                 # size of the buffer
+    buffer = info_for_current_frame[7][1:buffer_size]               # init buffer
+    mean_buffer_size = 3                                            # size of the buffer for the mean
+    mean_buffer = info_for_current_frame[10][1:mean_buffer_size]    # init mean_buffer
 
-    inside_outside_modifier = 30                        # when triggered, the threshold is inceased by the modifier
+    inside_outside_modifier = 30                                    # when triggered, the threshold is inceased by the modifier
 
     # Preprocessing: compencate the input data + quantize the frame to be a size x size grid
     input_data_above *= default_data_multiplier
@@ -200,30 +195,41 @@ def data_processing(input_data, info_for_current_frame):
     if (info_for_current_frame[1] >= 2):
         if (surrounding == "inside"):
             threshold -= inside_outside_modifier
-            mean_estimation *= data_multiplier_inside
+            colision_threshold += 100   #turn of inside
+            #mean_estimation *= data_multiplier_inside
         else:
             threshold += inside_outside_modifier
+
+    # Detect if very close to wall
+    colision_flag = False
+    mean_buffer.append(np.mean(mean_estimation))
+    if (np.mean(mean_buffer) > colision_threshold):
+        # user is very close to wall -> warn
+        print(f"WARNING!!\n")
+        colision_flag = True
+        write_serial([5, 5, 5, 5])
     
     # Movement detection, animation if detected more then 2 times
     movement_flag = False
-    movement = detect_movement(mean_estimation_bottom, movement_threshold, min_size_movement)
-    if (movement == True and info_for_current_frame[9] >= 2):
-        print("Movement detected -> call some animation function")
-        movement_flag = True
-        # call some animation function
-    else:
-        info_for_next_frame[9] = 0
+    if (not colision_flag):
+        movement = detect_movement(mean_estimation_bottom, movement_threshold, min_size_movement)
+        if (movement == True and info_for_current_frame[9] >= 2):
+            print("Movement detected")
+            movement_flag = True
+            # call some animation function
+        else:
+            info_for_next_frame[9] = 0
     
     # Passage detection (only inside), animation if detected more then 2 times
     passage_flag = False
-    if (not movement_flag):
+    if (not (movement_flag or colision_flag)):
         passage = Find_Passage(mean_estimation, size, passage_threshold, min_size_passage)
         if (passage != [] and info_for_current_frame[2] == "inside"):
             info_for_next_frame[3] = info_for_current_frame[3] + 1
             info_for_next_frame[4] = passage
             if (info_for_current_frame[3] >= 2):
                 # a passage must be found twice before it is confirmed as a passage
-                print(f"Passage found -> call some animation function\n{passage}")
+                animations.send_passage_sequence(passage)
                 passage_flag = True
         else:
             info_for_next_frame[3] = 0
@@ -235,13 +241,13 @@ def data_processing(input_data, info_for_current_frame):
     info_for_next_frame[5] = np.mean(np.array(buffer), axis=0)
     info_for_next_frame[6] = buffer_size
     info_for_next_frame[7] = buffer
-    if (not (movement_flag or passage_flag)):
+    if (not (colision_flag or movement_flag or passage_flag)):
         write_serial(info_for_next_frame[5])
     info_for_next_frame[0] = threshold
     #print(f"mean grid of size = {size}x{size} | len = {len(mean_estimation[0])}x{len(mean_estimation)}\n")
 
     
-    print(f"{info_for_next_frame[2]}, passage: {info_for_next_frame[4]}, data = {info_for_next_frame[5]}, movement: {info_for_next_frame[9]}\n")
+    print(f"{info_for_next_frame[2]}\t|\t data = {info_for_next_frame[5][::-1]}\n")
     
     return info_for_next_frame
 
